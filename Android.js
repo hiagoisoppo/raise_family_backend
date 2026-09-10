@@ -82,3 +82,79 @@ function calculateMonthSummary_(month, year) {
     progress: progress
   };
 }
+
+/**
+ * getTransactionsSince_ — devolve transações novas desde o último ID
+ * visto pelo app Android, para a notificação de "últimas transações".
+ *
+ * Diferente de getPreviewData/getPreviewDataForMonth, esta ação expõe
+ * dados por transação (descrição, valor, método de pagamento, usuário)
+ * — por isso NÃO é aberta como as outras: exige um token fixo
+ * (ANDROID_TOKEN), configurado como Script Property do projeto
+ * (Configurações do projeto → Propriedades do script), que precisa
+ * bater exatamente com o valor enviado no payload. Sem o token certo,
+ * nenhum dado é devolvido.
+ *
+ * transaction_user e transaction_pay_method na tabela TRANSACTION são
+ * IDs — aqui cruzamos com USER/PAY_METHOD pra devolver o nome (nunca
+ * o ID cru), e da tabela USER só user_name sai: nunca
+ * user_password_hash, user_password_salt, user_failed_attempts ou
+ * user_locked_until.
+ */
+
+function getAndroidToken_() {
+  return PropertiesService.getScriptProperties().getProperty('ANDROID_TOKEN');
+}
+
+function getTransactionsSince_(payload) {
+  var expectedToken = getAndroidToken_();
+  if (!expectedToken) {
+    return errorResponse_('ANDROID_TOKEN não configurado no servidor (Configurações do projeto → Propriedades do script).');
+  }
+
+  var providedToken = payload && payload.token;
+  if (!providedToken || providedToken !== expectedToken) {
+    return errorResponse_('Token inválido.');
+  }
+
+  var lastId = Number(payload.lastTransactionId) || 0;
+
+  var rows = readAll_('TRANSACTION').filter(function (r) {
+    return r.transaction_deleted !== true && Number(r.transaction_id) > lastId;
+  });
+
+  rows.sort(function (a, b) {
+    return Number(a.transaction_id) - Number(b.transaction_id);
+  });
+
+  // Limita a quantidade devolvida numa única chamada — protege contra
+  // um histórico gigante caso o app nunca tenha sincronizado antes.
+  var MAX_RESULTS = 20;
+  var truncated = rows.length > MAX_RESULTS;
+  if (truncated) rows = rows.slice(0, MAX_RESULTS);
+
+  var usersById = {};
+  readAll_('USER').forEach(function (u) { usersById[u.user_id] = u.user_name; });
+
+  var payMethodsById = {};
+  readAll_('PAY_METHOD').forEach(function (p) { payMethodsById[p.pay_method_id] = p.pay_method_name; });
+
+  var transactions = rows.map(function (t) {
+    return {
+      id: t.transaction_id,
+      value: Number(t.transaction_value) || 0,
+      type: t.transaction_type, // "Entrada" ou "Saida"
+      description: t.transaction_description,
+      payMethod: payMethodsById[t.transaction_pay_method] || '',
+      user: usersById[t.transaction_user] || ''
+    };
+  });
+
+  var lastIdReturned = rows.length ? rows[rows.length - 1].transaction_id : lastId;
+
+  return successResponse_({
+    transactions: transactions,
+    lastId: lastIdReturned,
+    truncated: truncated
+  });
+}
