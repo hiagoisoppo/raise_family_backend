@@ -37,7 +37,7 @@
  * requisição é rejeitada antes mesmo de chegar na lógica de negócio.
  */
 
-var PUBLIC_ACTIONS = ['login', 'checkSetupStatus', 'getPreviewData', 'getPreviewDataForMonth'];
+var PUBLIC_ACTIONS = ['login', 'checkSetupStatus', 'getPreviewData', 'getPreviewDataForMonth', 'getTransactionsSince'];
 
 function doPost(e) {
   return handleRequest_(e);
@@ -87,6 +87,7 @@ function routeAction_(action, payload) {
     case 'checkSetupStatus': return checkSetupStatus_();
     case 'getPreviewData': return getPreviewData_();
     case 'getPreviewDataForMonth': return getPreviewDataForMonth_(payload);
+    case 'getTransactionsSince': return getTransactionsSince_(payload);
 
     case 'getInitialData': return getInitialData_(payload);
     case 'getTransactions': return getTransactions_(payload);
