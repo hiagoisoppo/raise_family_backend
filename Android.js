@@ -127,11 +127,21 @@ function getTransactionsSince_(payload) {
     return Number(a.transaction_id) - Number(b.transaction_id);
   });
 
+  // O ID mais alto de verdade entre TODAS as novas (mesmo as que forem
+  // descartadas pelo truncamento abaixo) — sempre avança até aqui, pra
+  // nunca ficar "preso" reprocessando um backlog antigo ciclo após ciclo.
+  var trueLastId = rows.length ? rows[rows.length - 1].transaction_id : lastId;
+
   // Limita a quantidade devolvida numa única chamada — protege contra
   // um histórico gigante caso o app nunca tenha sincronizado antes.
+  // Quando há mais que o limite, mantém as MAIS RECENTES (maior ID),
+  // não as mais antigas do lote — senão a notificação fica mostrando
+  // um backlog antigo (ex: parcelas futuras criadas de uma vez, que
+  // ganham vários IDs sequenciais na hora da criação) em vez das
+  // transações realmente mais novas.
   var MAX_RESULTS = 20;
   var truncated = rows.length > MAX_RESULTS;
-  if (truncated) rows = rows.slice(0, MAX_RESULTS);
+  if (truncated) rows = rows.slice(rows.length - MAX_RESULTS);
 
   var usersById = {};
   readAll_('USER').forEach(function (u) { usersById[u.user_id] = u.user_name; });
@@ -150,7 +160,7 @@ function getTransactionsSince_(payload) {
     };
   });
 
-  var lastIdReturned = rows.length ? rows[rows.length - 1].transaction_id : lastId;
+  var lastIdReturned = trueLastId;
 
   return successResponse_({
     transactions: transactions,
