@@ -75,13 +75,93 @@ const SHEET_SCHEMA = {
     'transaction_reserve',
     'transaction_paid_off',
     'transaction_deleted'
+  ],
+
+  // ---------------------------------------------------------------
+  // Setor TASK — isolado do restante do sistema (não referencia nem é
+  // referenciado por TRANSACTION/RESERVE/CATEGORY/etc). Só reaproveita
+  // USER (task_user) para atribuir responsável, igual ao restante do app.
+  // ---------------------------------------------------------------
+  STAGE: [
+    'stage_id',
+    'stage_name',
+    'stage_description',
+    'stage_percentage',
+    'stage_color',
+    'stage_icon',
+    'stage_active',
+    'stage_deleted',
+    'stage_created_at',
+    'stage_updated_at'
+  ],
+  TASK: [
+    'task_id',
+    'task_name',
+    'task_description',
+    'task_budget',
+    'task_observation',
+    'task_user',
+    'stage_id',
+    'task_deleted',
+    'task_created_at',
+    'task_updated_at'
+  ],
+  MATERIAL: [
+    'material_id',
+    'task_id',
+    'material_name',
+    'material_description',
+    'material_link',
+    'material_units_needed',
+    'material_unit_price',
+    'material_purchased',
+    'material_deleted',
+    'material_created_at',
+    'material_updated_at'
+  ],
+  TOOL: [
+    'tool_id',
+    'task_id',
+    'tool_name',
+    'tool_description',
+    'tool_link',
+    'tool_price',
+    'tool_purchased',
+    'tool_deleted',
+    'tool_created_at',
+    'tool_updated_at'
+  ],
+  VIDEO: [
+    'video_id',
+    'task_id',
+    'video_title',
+    'video_description',
+    'video_link',
+    'video_deleted',
+    'video_created_at',
+    'video_updated_at'
+  ],
+  ARTICLE: [
+    'article_id',
+    'task_id',
+    'article_title',
+    'article_description',
+    'article_link',
+    'article_deleted',
+    'article_created_at',
+    'article_updated_at'
   ]
 };
 
 // Ordem de criação: SETTINGS primeiro, pois as outras abas dependem dela
 // para gerar IDs com segurança. CHARGE_PAYMENT depende de CHARGE existir
 // (não tecnicamente, mas mantém a leitura do código organizada).
-const SHEET_CREATION_ORDER = ['SETTINGS', 'USER', 'CATEGORY', 'PAY_METHOD', 'RESERVE', 'TRANSACTION', 'CHARGE', 'CHARGE_PAYMENT', 'FIXED_CHARGE'];
+const SHEET_CREATION_ORDER = [
+  'SETTINGS', 'USER', 'CATEGORY', 'PAY_METHOD', 'RESERVE', 'TRANSACTION', 'CHARGE', 'CHARGE_PAYMENT', 'FIXED_CHARGE',
+  // Setor TASK — STAGE precisa existir antes de TASK (referencia stage_id);
+  // TASK precisa existir antes de MATERIAL/TOOL/VIDEO/ARTICLE (referenciam task_id).
+  'STAGE', 'TASK', 'MATERIAL', 'TOOL', 'VIDEO', 'ARTICLE'
+];
 
 // Linhas iniciais obrigatórias da aba SETTINGS (preferências + contadores de ID).
 const DEFAULT_SETTINGS_ROWS = [
@@ -95,7 +175,13 @@ const DEFAULT_SETTINGS_ROWS = [
   ['next_reserve_id', 1],
   ['next_charge_id', 1],
   ['next_charge_payment_id', 1],
-  ['next_fixed_charge_id', 1]
+  ['next_fixed_charge_id', 1],
+  ['next_stage_id', 1],
+  ['next_task_id', 1],
+  ['next_material_id', 1],
+  ['next_tool_id', 1],
+  ['next_video_id', 1],
+  ['next_article_id', 1]
 ];
 
 /**
@@ -227,7 +313,13 @@ function ensureDateColumnAsPlainText_(ss) {
     TRANSACTION: ['transaction_date'],
     CHARGE: ['charge_due_date', 'charge_created_date'],
     CHARGE_PAYMENT: ['charge_payment_date'],
-    FIXED_CHARGE: ['fixed_charge_last_generated']
+    FIXED_CHARGE: ['fixed_charge_last_generated'],
+    STAGE: ['stage_created_at', 'stage_updated_at'],
+    TASK: ['task_created_at', 'task_updated_at'],
+    MATERIAL: ['material_created_at', 'material_updated_at'],
+    TOOL: ['tool_created_at', 'tool_updated_at'],
+    VIDEO: ['video_created_at', 'video_updated_at'],
+    ARTICLE: ['article_created_at', 'article_updated_at']
   };
 
   Object.keys(dateColumns).forEach(function (sheetName) {

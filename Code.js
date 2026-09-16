@@ -132,6 +132,35 @@ function routeAction_(action, payload) {
     case 'deleteFixedCharge': return deleteFixedCharge_(payload);
     case 'runFixedChargesNow': return runFixedChargesNow_();
 
+    // ---------- Setor TASK ----------
+    case 'getTaskInitialData': return getTaskInitialData_();
+    case 'getTasks': return getTasks_();
+    case 'getTaskDetail': return getTaskDetail_(payload);
+    case 'createTask': return createTask_(payload);
+    case 'updateTask': return updateTask_(payload);
+    case 'deleteTask': return deleteTask_(payload);
+
+    case 'getStages': return getStages_();
+    case 'createStage': return createStage_(payload);
+    case 'updateStage': return updateStage_(payload);
+    case 'deleteStage': return deleteStage_(payload);
+
+    case 'createMaterial': return createMaterial_(payload);
+    case 'updateMaterial': return updateMaterial_(payload);
+    case 'deleteMaterial': return deleteMaterial_(payload);
+
+    case 'createTool': return createTool_(payload);
+    case 'updateTool': return updateTool_(payload);
+    case 'deleteTool': return deleteTool_(payload);
+
+    case 'createVideo': return createVideo_(payload);
+    case 'updateVideo': return updateVideo_(payload);
+    case 'deleteVideo': return deleteVideo_(payload);
+
+    case 'createArticle': return createArticle_(payload);
+    case 'updateArticle': return updateArticle_(payload);
+    case 'deleteArticle': return deleteArticle_(payload);
+
     default: return errorResponse_('Ação desconhecida: ' + action);
   }
 }
